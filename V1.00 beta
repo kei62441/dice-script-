@@ -1,0 +1,64 @@
+-
+-- CHANGE THESE 2 SETTINGS ONLY --
+basebet   = balance / 50000
+target    = balance * 1.5
+dicebot	  = 1				-- IF YOU PLAY IN OTHER SYSTEM THAT IS NOT WEBDICE, CHANCE THIS TO 1
+
+-- !! DONT CHANGE !! --
+bethigh   = false
+nextbet   = basebet
+profit    = 0
+curprofit = 0
+countbet  = 0
+chance    = 60
+multiplier_win  = chance / (100-chance)+0.85
+multiplier_lose = chance / (100-chance)+0.25
+time 			= os.date("*t")
+currenttime 	= time
+local clock 	= os.clock
+local t0    	= clock()
+t1				=0
+runtime 		= time
+starttime 		= clock()
+startbalance=balance
+netprofit=0
+
+-- !! DONT CHANGE !! --
+
+function dobet()
+
+if balance >= target then
+    stop()
+end
+    if (win) then
+    if profit > curprofit then
+      nextbet   = basebet
+      curprofit = profit
+      multiplier_win  = chance / (100-chance)+0.85
+      multiplier_lose = chance / (100-chance)+0.25
+      resetseed();
+    else
+      nextbet = previousbet * multiplier_lose
+    end
+    else
+        countbet+=1
+    nextbet = previousbet * multiplier_win
+        if countbet > 3 then
+            bethigh = !bethigh
+            countbet = 0
+        end
+    end
+	netprofit=balance-startbalance
+	curtime = clock()
+	times = math.floor(curtime - starttime)
+	hours = math.floor(times / 3600)
+	minutes = math.floor((times - (hours * 3600)) / 60)
+	seconds = math.floor((times - (hours * 3600) - (minutes * 60)))
+	print("-------------------------------")
+	if dicebot == 0 then
+		print(("Start Time: 	 %02d:%02d:%02d"):format(currenttime.hour, currenttime.min, currenttime.sec))
+	end
+	print("Running Time:    "..hours ..':'..minutes..':'..seconds)
+	print("Total Profit:    "..string.format("%.8f",balance-startbalance))
+	print("% Profit:        "..string.format("%.6f",netprofit*100/startbalance))
+end
