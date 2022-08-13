@@ -1,4 +1,4 @@
--
+
 -- CHANGE THESE 2 SETTINGS ONLY --
 basebet   = balance / 50000
 target    = balance * 1.5
