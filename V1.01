@@ -1,0 +1,111 @@
+resetstats ()
+resetseed()
+
+-- VARIABLES
+baseBet    = balance / 100000
+nextbet    = baseBet
+baseChance = 65
+chance     = baseChance
+
+-- STAT TRACKING VARIABLES
+printStatsEveryXBets = 50
+initialbalance       = balance
+Banked               = 0
+TW                   = 0 -- Total Wager Count
+TB                   = 0 -- Total Bets Count
+LoseStreak           = math.random(2, 8)-10
+WinStreak            = math.random(4, 8)
+playtime             = os.clock()
+startTime            = os.clock()
+previousStreak       = 0
+lostCount            = 0
+highestLost          = 0
+
+
+function printStats()
+    print("\n\n#=========================================#")
+    print("                                    STATS                    ")
+    print("#=========================================#")
+    print("# Bets: " .. TB)
+    print("# Vaulted: " .. string.format("%9.8f", Banked))
+    print("# Wagered: " .. string.format("%9.8f", TW))
+    print("# bets per: " .. string.format("%2.3f", TB/(os.clock()-playtime)) .. " /second | " .. math.floor(0.5+TB/(os.clock()-playtime)*60^2) .. " /hour | " .. math.floor(0.5+24*TB/(os.clock()-playtime)*60^2) .. " /day")
+    print("# Lost count: " .. lostCount)
+    print("# Highest Bet: " .. highestLost)
+    print("#=========================================#\n\n")
+end
+
+function getMaxLoosingStreak(chance, bb)
+    -- Returns the maximum loosing streak possible with a minimum increase on loss
+    pout = (100 - 1)/chance
+    q    = ((1+(1/(pout-1)))-1)+1
+    n    = math.log((balance/bb)*(-1+q)+1)/math.log(q) -- Maximum number of losses
+    n    = math.floor(n)
+    --print(n)
+    return n
+end
+
+function calcBet(chance, previousbet)
+    pout   = 100 / chance
+    pout   = pout - (pout * (1/100))
+    minInc = ((((pout / (1 * (pout - 1))) * 100) - 100) * 100 + 1) / 100
+    multi  = 1 + (minInc / 100)
+    return previousbet * multi
+end
+
+function dobet ()
+    if (TB % printStatsEveryXBets == 0) then
+        printStats()
+    end
+    
+    TW       += previousbet -- adds previous bet to total wagered
+    TB       += 1           -- keeps a count of total bets
+
+    base = baseBet
+        
+    if (win) then
+        if (currentstreak == 1) then
+            nextbet = base
+            chance  = baseChance
+        end
+        
+        previousStreak = 0
+    else
+        if (currentstreak == -1 or currentstreak == -2) then
+            chance  = baseChance
+            nextbet = base
+        else
+            if (currentstreak == -3) then
+                chance = 20
+            end
+            
+            if (currentstreak <= -4) then
+                chance  = 65
+                nextbet = calcBet(chance, previousbet)
+            end
+        end
+        
+        previousStreak += 1
+        
+        maxStreak = getMaxLoosingStreak(chance, previousbet) + previousStreak
+        
+        if (currentstreak % math.floor((maxStreak * -0.8)) == 0) then
+            print("----------LOST----------")
+            nextbet        = 0
+            chance         = 95
+            previousStreak = 0
+            lostCount += 1
+            if (previousbet >= highestLost) then
+                highestLost = previousbet
+            end
+        end
+    end
+    
+    if (currentstreak >= WinStreak) then            
+        bethigh = !bethigh
+    end
+
+    if (currentstreak <= LoseStreak) then            
+        bethigh = !bethigh
+    end
+end
